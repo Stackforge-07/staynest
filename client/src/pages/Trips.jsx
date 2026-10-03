@@ -8,6 +8,7 @@ export default function Trips() {
   const location = useLocation();
   const [bookings, setBookings] = useState(null);
   const [error, setError] = useState('');
+  const [bookingToCancel, setBookingToCancel] = useState(null);
 
   const load = () =>
     api
@@ -19,10 +20,10 @@ export default function Trips() {
     load();
   }, []);
 
-  // TODO: ask for confirmation before cancelling.
-  const cancel = async (id) => {
+  const cancel = async () => {
     try {
-      await api.patch(`/bookings/${id}/cancel`);
+      await api.patch(`/bookings/${bookingToCancel._id}/cancel`);
+      setBookingToCancel(null);
       load();
     } catch (err) {
       setError(getErrorMessage(err));
@@ -39,6 +40,28 @@ export default function Trips() {
       {bookings?.length === 0 && (
         <p className="muted">No trips yet. <Link to="/">Find a stay</Link></p>
       )}
+      {bookingToCancel && (
+        <div className="confirmation-backdrop">
+          <section
+            className="card confirmation-dialog"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="cancel-title"
+            aria-describedby="cancel-details"
+            onKeyDown={(event) => { if (event.key === 'Escape') setBookingToCancel(null); }}
+          >
+            <h2 id="cancel-title">Cancel this trip?</h2>
+            <p id="cancel-details">
+              Cancel your stay at <strong>{bookingToCancel.listing?.title}</strong> from{' '}
+              {formatDate(bookingToCancel.checkIn)} to {formatDate(bookingToCancel.checkOut)}?
+            </p>
+            <div className="row">
+              <button className="btn btn-danger" onClick={cancel}>Yes, cancel trip</button>
+              <button className="btn btn-ghost" autoFocus onClick={() => setBookingToCancel(null)}>Keep trip</button>
+            </div>
+          </section>
+        </div>
+      )}
       <div className="trip-list">
         {bookings?.map((b) => (
           <div key={b._id} className="card trip">
@@ -54,7 +77,7 @@ export default function Trips() {
               <span className={`status status-${b.status}`}>{b.status}</span>
               <strong>{formatINR(b.totalPrice)}</strong>
               {['pending', 'confirmed'].includes(b.status) && (
-                <button className="btn btn-danger" onClick={() => cancel(b._id)}>Cancel</button>
+                <button className="btn btn-danger" onClick={() => setBookingToCancel(b)}>Cancel</button>
               )}
             </div>
           </div>

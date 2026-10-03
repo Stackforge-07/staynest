@@ -105,6 +105,9 @@ label { display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; colo
 .trip img { width: 140px; height: 100px; object-fit: cover; border-radius: 8px; }
 .trip p { margin: 4px 0; }
 .trip-side { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+.confirmation-backdrop { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 16px; background: rgb(42 36 32 / 55%); }
+.confirmation-dialog { width: min(100%, 440px); padding: 24px; box-shadow: 0 16px 48px rgb(42 36 32 / 24%); }
+.confirmation-dialog h2 { margin-top: 0; }
 
 .status { text-transform: capitalize; font-size: 0.85rem; padding: 2px 10px; border-radius: 999px; background: var(--bg); border: 1px solid var(--border); }
 .status-confirmed, .status-completed { color: var(--success); }
