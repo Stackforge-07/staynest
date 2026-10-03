@@ -9,11 +9,15 @@ export default function ListingDetail() {
   const { id } = useParams();
   const [listing, setListing] = useState(null);
   const [error, setError] = useState('');
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
 
   const load = () =>
     api
       .get(`/listings/${id}`)
-      .then(({ data }) => setListing(data))
+      .then(({ data }) => {
+        setListing(data);
+        setActiveImageIndex(0);
+      })
       .catch((err) => setError(getErrorMessage(err)));
 
   useEffect(() => {
@@ -23,6 +27,21 @@ export default function ListingDetail() {
   if (error) return <p className="error">{error}</p>;
   if (!listing) return <Loader />;
 
+  const images = listing.images || [];
+  const showImage = (offset) => {
+    setActiveImageIndex((current) => (current + offset + images.length) % images.length);
+  };
+  const handleGalleryKeyDown = (event) => {
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      showImage(-1);
+    }
+    if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      showImage(1);
+    }
+  };
+
   return (
     <section>
       <h1>{listing.title}</h1>
@@ -31,8 +50,35 @@ export default function ListingDetail() {
         {listing.city}, {listing.state}
       </p>
 
-      {/* TODO: image gallery / carousel when a listing has multiple images */}
-      <img className="hero-img" src={listing.images[0]} alt={listing.title} />
+      {images.length > 0 ? (
+        <div className="listing-gallery" role="region" tabIndex={0} onKeyDown={handleGalleryKeyDown} aria-label="Stay photos">
+          <div className="gallery-main">
+            <img className="hero-img" src={images[activeImageIndex]} alt={`${listing.title} - photo ${activeImageIndex + 1}`} />
+            {images.length > 1 && (
+              <>
+                <button className="gallery-arrow gallery-previous" aria-label="Previous photo" onClick={() => showImage(-1)}>‹</button>
+                <button className="gallery-arrow gallery-next" aria-label="Next photo" onClick={() => showImage(1)}>›</button>
+                <span className="gallery-count">{activeImageIndex + 1} / {images.length}</span>
+              </>
+            )}
+          </div>
+          {images.length > 1 && (
+            <div className="gallery-thumbnails" aria-label="Choose a photo">
+              {images.map((image, index) => (
+                <button
+                  key={`${image}-${index}`}
+                  className={`gallery-thumbnail${activeImageIndex === index ? ' active' : ''}`}
+                  aria-label={`Show photo ${index + 1} of ${images.length}`}
+                  aria-pressed={activeImageIndex === index}
+                  onClick={() => setActiveImageIndex(index)}
+                >
+                  <img src={image} alt="" />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : <p className="muted">No photos available.</p>}
 
       <div className="detail-layout">
         <div>

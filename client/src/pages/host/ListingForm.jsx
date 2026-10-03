@@ -14,7 +14,7 @@ const empty = {
   maxGuests: 2,
   bedrooms: 1,
   amenities: '',
-  imageUrl: '',
+  imageUrls: '',
 };
 
 export default function ListingForm() {
@@ -31,14 +31,13 @@ export default function ListingForm() {
         ...empty,
         ...data,
         amenities: data.amenities.join(', '),
-        imageUrl: data.images[0] || '',
+        imageUrls: (data.images || []).join('\n'),
       })
     );
   }, [id, isEdit]);
 
   const set = (key) => (e) => setForm({ ...form, [key]: e.target.value });
 
-  // TODO: replace the image URL field with real image upload (Cloudinary / multer).
   const submit = async (e) => {
     e.preventDefault();
     setError('');
@@ -55,7 +54,8 @@ export default function ListingForm() {
       bedrooms: Number(form.bedrooms),
       amenities: amenities.split(',').map((a) => a.trim()).filter(Boolean),
     };
-    if (imageUrl) payload.images = [imageUrl];
+    const images = form.imageUrls.split(/\r?\n/).map((url) => url.trim()).filter(Boolean);
+    if (images.length) payload.images = images;
     try {
       if (isEdit) await api.put(`/listings/${id}`, payload);
       else await api.post('/listings', payload);
@@ -90,7 +90,10 @@ export default function ListingForm() {
         </label>
       </div>
       <input placeholder="Amenities (comma separated: WiFi, AC, Parking)" value={form.amenities} onChange={set('amenities')} />
-      <input placeholder="Image URL (optional)" value={form.imageUrl} onChange={set('imageUrl')} />
+      <label>
+        Image URLs (one per line, optional)
+        <textarea placeholder="https://example.com/stay.jpg" value={form.imageUrls} onChange={set('imageUrls')} />
+      </label>
       {error && <p className="error">{error}</p>}
       <button className="btn">{isEdit ? 'Save changes' : 'Publish listing'}</button>
     </form>
