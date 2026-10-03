@@ -4,6 +4,11 @@ import api, { getErrorMessage } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { formatINR, nightsBetween } from '../utils/format.js';
 
+const toDateInputValue = (date) =>
+  String(date.getFullYear()) + '-' +
+  String(date.getMonth() + 1).padStart(2, '0') + '-' +
+  String(date.getDate()).padStart(2, '0');
+
 export default function BookingBox({ listing }) {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -13,9 +18,13 @@ export default function BookingBox({ listing }) {
 
   const nights = nightsBetween(form.checkIn, form.checkOut);
   const total = nights * listing.pricePerNight;
+  const today = new Date();
+  const minCheckIn = toDateInputValue(new Date(today.getFullYear(), today.getMonth(), today.getDate()));
+  const minCheckOutDate = form.checkIn ? new Date(form.checkIn + 'T00:00:00') : new Date(minCheckIn + 'T00:00:00');
+  minCheckOutDate.setDate(minCheckOutDate.getDate() + 1);
+  const minCheckOut = toDateInputValue(minCheckOutDate);
   const set = (key) => (e) => setForm({ ...form, [key]: e.target.value });
 
-  // TODO: the date inputs allow past dates - set a `min` attribute (see issue tracker).
   const book = async (e) => {
     e.preventDefault();
     if (!user) return navigate('/login', { state: { from: `/stays/${listing._id}` } });
@@ -44,11 +53,11 @@ export default function BookingBox({ listing }) {
       <div className="row">
         <label className="grow">
           Check-in
-          <input type="date" required value={form.checkIn} onChange={set('checkIn')} />
+          <input type="date" required min={minCheckIn} value={form.checkIn} onChange={set('checkIn')} />
         </label>
         <label className="grow">
           Check-out
-          <input type="date" required value={form.checkOut} onChange={set('checkOut')} />
+          <input type="date" required min={minCheckOut} value={form.checkOut} onChange={set('checkOut')} />
         </label>
       </div>
       <label>
