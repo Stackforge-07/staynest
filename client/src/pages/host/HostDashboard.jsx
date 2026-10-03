@@ -47,7 +47,8 @@ export default function HostDashboard() {
       <h2>Booking requests</h2>
       {bookings.length === 0 && <p className="muted">No bookings yet.</p>}
       {bookings.length > 0 && (
-        <table className="table">
+        <div className="table-scroll">
+          <table className="table">
           <thead>
             <tr><th>Guest</th><th>Stay</th><th>Dates</th><th>Total</th><th>Status</th><th /></tr>
           </thead>
@@ -73,7 +74,8 @@ export default function HostDashboard() {
               </tr>
             ))}
           </tbody>
-        </table>
+          </table>
+        </div>
       )}
 
       <h2>My listings ({listings.length})</h2>
