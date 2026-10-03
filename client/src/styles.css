@@ -58,6 +58,9 @@ label { display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; colo
 .search-bar { display: flex; gap: 10px; padding: 12px; margin-top: 18px; }
 .search-bar input:first-child { flex: 2; }
 .search-bar .btn { flex-shrink: 0; }
+.listing-controls { display: flex; justify-content: flex-end; align-items: end; gap: 16px; margin: 0 0 16px; }
+.listing-controls label { min-width: 190px; }
+.pagination { display: flex; justify-content: center; align-items: center; gap: 16px; margin: 28px 0; }
 
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 22px; }
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }

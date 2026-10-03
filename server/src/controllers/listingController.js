@@ -7,6 +7,23 @@ import asyncHandler from '../utils/asyncHandler.js';
 // NOTE: no pagination yet, and checkIn/checkOut availability filter is not implemented.
 export const getListings = asyncHandler(async (req, res) => {
   const { city, type, minPrice, maxPrice, guests } = req.query;
+  const page = Number(req.query.page ?? 1);
+  const limit = Number(req.query.limit ?? 8);
+  const sort = req.query.sort ?? 'newest';
+  const sortOptions = {
+    price_asc: { pricePerNight: 1 },
+    price_desc: { pricePerNight: -1 },
+    rating: { avgRating: -1, createdAt: -1 },
+    newest: { createdAt: -1 },
+  };
+  if (!Number.isInteger(page) || page < 1 || !Number.isInteger(limit) || limit < 1 || limit > 50) {
+    res.status(400);
+    throw new Error('Page and limit must be positive integers (limit must be 50 or less)');
+  }
+  if (!Object.hasOwn(sortOptions, sort)) {
+    res.status(400);
+    throw new Error('Sort must be price_asc, price_desc, rating, or newest');
+  }
   const filter = { isActive: true };
 
   if (city) filter.city = new RegExp(`^${city}`, 'i');
@@ -18,8 +35,15 @@ export const getListings = asyncHandler(async (req, res) => {
     if (maxPrice) filter.pricePerNight.$lte = Number(maxPrice);
   }
 
-  const listings = await Listing.find(filter).populate('host', 'name').sort({ createdAt: -1 });
-  res.json(listings);
+  const [listings, total] = await Promise.all([
+    Listing.find(filter)
+      .populate('host', 'name')
+      .sort(sortOptions[sort])
+      .skip((page - 1) * limit)
+      .limit(limit),
+    Listing.countDocuments(filter),
+  ]);
+  res.json({ listings, page, totalPages: Math.max(1, Math.ceil(total / limit)), total });
 });
 
 // GET /api/listings/mine (host)

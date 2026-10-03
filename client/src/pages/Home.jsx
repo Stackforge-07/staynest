@@ -5,33 +5,45 @@ import Loader from '../components/Loader.jsx';
 import { STAY_TYPES } from '../utils/format.js';
 
 const initial = { city: '', type: '', guests: '', maxPrice: '' };
+const PAGE_SIZE = 8;
 
 export default function Home() {
   const [filters, setFilters] = useState(initial);
   const [listings, setListings] = useState([]);
+  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
+  const [sort, setSort] = useState('newest');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const search = (params) => {
+  const search = (params, page = 1, sortBy = sort) => {
     setLoading(true);
     setError('');
     const clean = Object.fromEntries(Object.entries(params).filter(([, v]) => v !== ''));
     api
-      .get('/listings', { params: clean })
-      .then(({ data }) => setListings(data))
+      .get('/listings', { params: { ...clean, page, limit: PAGE_SIZE, sort: sortBy } })
+      .then(({ data }) => {
+        setListings(data.listings);
+        setPagination({ page: data.page, totalPages: data.totalPages, total: data.total });
+      })
       .catch((err) => setError(getErrorMessage(err)))
       .finally(() => setLoading(false));
   };
 
   useEffect(() => {
-    search(initial);
+    search(initial, 1, sort);
   }, []);
 
   const set = (key) => (e) => setFilters({ ...filters, [key]: e.target.value });
 
   const submit = (e) => {
     e.preventDefault();
-    search(filters);
+    search(filters, 1, sort);
+  };
+
+  const changeSort = (event) => {
+    const nextSort = event.target.value;
+    setSort(nextSort);
+    search(filters, 1, nextSort);
   };
 
   return (
@@ -52,6 +64,18 @@ export default function Home() {
       </div>
 
       {error && <p className="error">{error}</p>}
+      <div className="listing-controls">
+        <label>
+          Sort stays
+          <select value={sort} onChange={changeSort}>
+            <option value="newest">Newest</option>
+            <option value="price_asc">Price: low to high</option>
+            <option value="price_desc">Price: high to low</option>
+            <option value="rating">Highest rated</option>
+          </select>
+        </label>
+        <span className="muted">{pagination.total} stays</span>
+      </div>
       {loading ? (
         <Loader />
       ) : listings.length === 0 ? (
@@ -60,6 +84,13 @@ export default function Home() {
         <div className="grid">
           {listings.map((l) => <ListingCard key={l._id} listing={l} />)}
         </div>
+      )}
+      {!loading && !error && (
+        <nav className="pagination" aria-label="Listing pages">
+          <button className="btn btn-ghost" disabled={pagination.page <= 1} onClick={() => search(filters, pagination.page - 1)}>Previous</button>
+          <span aria-live="polite">Page {pagination.page} of {pagination.totalPages}</span>
+          <button className="btn btn-ghost" disabled={pagination.page >= pagination.totalPages} onClick={() => search(filters, pagination.page + 1)}>Next</button>
+        </nav>
       )}
     </section>
   );
